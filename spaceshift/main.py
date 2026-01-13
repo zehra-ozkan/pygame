@@ -30,10 +30,18 @@ player_rect = player_surf.get_frect(center=(WIDTH / 2, HEIGHT / 2))
 
 star_surface = pygame.image.load(join('spaceshift','images', 'star.png')).convert_alpha()
 
+meteor_surface = pygame.image.load(join('spaceshift', 'images', 'meteor.png')).convert_alpha()
+meteor_rectangle = meteor_surface.get_frect(center=(WIDTH / 2, HEIGHT/2))
+
+laser_surface = pygame.image.load(join('spaceshift', 'images', 'laser.png')).convert_alpha()
+laser_rectangle = laser_surface.get_frect(bottomleft=(20, HEIGHT - 20))
+
 star_coordinates = []
 for i in range (20):
     star_coordinates.append((randrange(0, WIDTH), randrange(0, HEIGHT)))
 
+
+dir = 0.5
 while not exit:
     for event in pygame.event.get(): #this gets all the events in the pygame
         if event.type == pygame.QUIT:
@@ -51,10 +59,24 @@ while not exit:
     
     for i in star_coordinates:
         display_surface.blit(star_surface, i)#putting one surface on another surface
-        
+    
+    display_surface.blit(meteor_surface, meteor_rectangle)    
+    display_surface.blit(laser_surface, laser_rectangle)    
     #display_surface.blit(player_surf, (surface_x, 5))#putting one surface on another surface
+    
+    #bounce from left to right
+    if player_rect.right >= WIDTH:
+        dir = -0.5
+    if player_rect.left <=0:
+        print("come herdddddddddddddddddddddddddddddddddddde")
+        dir = 0.5
+        
+    print(dir)
+    player_rect.right = player_rect.right + dir
+    
     display_surface.blit(player_surf, player_rect)#putting one surface on another surface
     player_rect.bottom = 200
+    
     pygame.display.update()
 
 #ensures that the game will close properly, safety net
