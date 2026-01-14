@@ -7,20 +7,18 @@ class Player(pygame.sprite.Sprite): #inheriting from sprite sprite is a class wi
         super().__init__(groups)
         self.image = pygame.image.load(join('spaceshift','images', 'player.png')).convert_alpha()
         self.rect = self.image.get_frect(center=(WIDTH / 2, HEIGHT / 2))
-
-    def update(self):
+        self.direction = pygame.math.Vector2(0, 0)
+        self.speed = 240
+        
+    def update(self, dt):
         print("ship is being updated")
-        
-        dir = pygame.math.Vector2(0, 0)
-        speed = 240
-        
+
         keys =  pygame.key.get_pressed()
         
-        dir.x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])#htis successfully replaces the above code
-        dir.y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
-        dir = dir.normalize() if dir.magnitude() > 0 else dir #this stabilises teh speed
-        
-        self.rect.center = self.rect.center + dir * speed * dt #multipllying with dt makes the movement speed independent from fps
+        self.direction.x = int(keys[pygame.K_RIGHT]) - int(keys[pygame.K_LEFT])#htis successfully replaces the above code
+        self.direction.y = int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP])
+        self.direction = self.direction.normalize() if self.direction.magnitude() > 0 else self.direction #this stabilises teh speed
+        self.rect.center = self.rect.center +  self.direction * self.speed * dt #multipllying with dt makes the movement speed independent from fps
 
         
 
@@ -60,12 +58,12 @@ laser_rectangle = laser_surface.get_frect(bottomleft=(20, HEIGHT - 20))
 
 
 while not exit:
-    dt = clock.tick(120) / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
+    delta_time = clock.tick(120) / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
     for event in pygame.event.get(): #this gets all the events in the pygame
         if event.type == pygame.QUIT:
             exit = True
          
-    all_sprites.update()
+    all_sprites.update(delta_time)
     keys = pygame.key.get_pressed()
     
         
@@ -86,7 +84,6 @@ while not exit:
       
     display_surface.blit(meteor_surface, meteor_rectangle)    
     display_surface.blit(laser_surface, laser_rectangle)    
-    #display_surface.blit(player_surf, player_rect)#putting one surface on another surface
     display_surface.blit(player.image, player.rect)
     all_sprites.draw(display_surface)
     pygame.display.update()
