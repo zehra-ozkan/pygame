@@ -1,6 +1,6 @@
 import pygame
 from os.path import join
-from random import randrange
+from random import randrange, uniform
 
 class Player(pygame.sprite.Sprite): #inheriting from sprite sprite is a class with a reectangle and a surface in pygame
     def __init__(self, groups):
@@ -32,10 +32,10 @@ class Player(pygame.sprite.Sprite): #inheriting from sprite sprite is a class wi
         self.direction = self.direction.normalize() if self.direction.magnitude() > 0 else self.direction #this stabilises teh speed
         self.rect.center = self.rect.center +  self.direction * self.speed * dt #multipllying with dt makes the movement speed independent from fps
 
-            #laser
+        #laser
         k = pygame.key.get_just_pressed()
         if k[pygame.K_SPACE] and self.can_shoot:
-            Laser(laser_surface, self.rect.midtop, all_sprites)
+            Laser(laser_surface, self.rect.midtop, (all_sprites, laser_sprites))
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
         
@@ -63,11 +63,11 @@ class Meteor(pygame.sprite.Sprite):
         super().__init__(groups)
         self.image = surf
         self.rect = self.image.get_frect(midbottom=(randrange(0 , WIDTH), 0))
-        self.speed = 200
+        self.speed = randrange(250, 550)
         self.live = True
         self.birth = pygame.time.get_ticks()
-        self.lifetime = 2000 #this is two seconds
-        print("created at " , self.birth)
+        self.lifetime = 3000 #this is two seconds
+        self.direction = pygame.Vector2(uniform(-0.5 , 0.5) , 1)#so that the meteors do not move in a straight line
         
     def meteor_timer(self):
         if not self.live:
@@ -76,12 +76,12 @@ class Meteor(pygame.sprite.Sprite):
             self.live = False
     def update(self, dt):
         #movement of a meteor
-        self.rect.bottom = self.rect.bottom + self.speed * dt
+        
+        self.rect.center = self.rect.center + self.speed * self.direction.normalize() * dt
+        self.direction.x = uniform(-0.5 , 0.5) if randrange(0 , 10) > 7 else self.direction.x
         self.meteor_timer()
         if not self.live:
-            self.kill()
-            print("killed at" , pygame.time.get_ticks())
-    
+            self.kill()    
         
         
 pygame.init()
@@ -96,11 +96,12 @@ clock = pygame.time.Clock()
 
 #surface
 
-surf = pygame.Surface((100, 200))
-surf.fill('purple')
-surface_x = 100
+
 
 all_sprites = pygame.sprite.Group()
+meteor_sprites = pygame.sprite.Group()
+laser_sprites = pygame.sprite.Group()
+
 star_surface = pygame.image.load(join('spaceshift','images', 'star.png')).convert_alpha()
 for i in range (20):
     star = Star(all_sprites, star_surface)
@@ -121,17 +122,19 @@ while not exit:
         if event.type == pygame.QUIT:
             exit = True
         if event.type == meteor_event:
-            Meteor(meteor_surface , all_sprites)
+            Meteor(meteor_surface , (all_sprites, meteor_sprites))
             pass
-         
+    
+    #update
     all_sprites.update(delta_time)
-    keys = pygame.key.get_pressed()
+    collided_sprites = pygame.sprite.groupcollide(laser_sprites, meteor_sprites, True, True)
     
 
     display_surface.fill('darkgrey')#if you remove htis line it does not claer
-      
-    
     all_sprites.draw(display_surface)
+    
+    #collision test
+    
     pygame.display.update()
 
 #ensures that the game will close properly, safety net
