@@ -36,6 +36,7 @@ class Player(pygame.sprite.Sprite): #inheriting from sprite sprite is a class wi
         k = pygame.key.get_just_pressed()
         if k[pygame.K_SPACE] and self.can_shoot:
             Laser(laser_surface, self.rect.midtop, (all_sprites, laser_sprites))
+            laser_sound.play()
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
         
@@ -95,12 +96,12 @@ class Explosion(pygame.sprite.Sprite):
         self.image = surfaces[0] #initial image for the animation
         
         self.rect = self.image.get_frect(center=pos)
-        self.animation_speed = 20 #this is in milliseconds
+        self.animation_speed = 250 #this is in milliseconds
         self.last_image_birth = 0
         self.current_image = 0
         print("initialised the explostion")
     def update(self, dt):
-        if pygame.time.get_ticks() - self.last_image_birth >= self.animation_speed:
+        if pygame.time.get_ticks() - self.last_image_birth >= self.animation_speed * dt:
             self.current_image = self.current_image + 1
             self.last_image_birth = pygame.time.get_ticks()
 
@@ -112,9 +113,7 @@ class Explosion(pygame.sprite.Sprite):
             return 
         
         self.image = self.surfaces[self.current_image]
-        
-        
-     
+             
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) + 1
     text_surf = font.render(str(current_time)  , True, (201 , 170, 250))
@@ -153,12 +152,23 @@ explosion_surfaces = []
 for i in range(21):
     explosion_surfaces.append(pygame.image.load(join('spaceshift', 'images','explosion', str(i) + '.png')).convert_alpha())
 
+#sound
+laser_sound = pygame.mixer.Sound(join('spaceshift', 'audio', 'laser.wav'))
+laser_sound.set_volume(0.5)
+explosion_sound = pygame.mixer.Sound(join('spaceshift', 'audio', 'explosion.wav'))
+damage_sound = pygame.mixer.Sound(join('spaceshift', 'audio', 'damage.ogg'))
+game_music = pygame.mixer.Sound(join('spaceshift', 'audio', 'game_music.wav'))
+game_music.set_volume(0.3)
+game_music.play()
+
 #custom event -> meteor event
 meteor_event = pygame.event.custom_type()
 pygame.time.set_timer(meteor_event, 500) #it will be triggered every 500 miliseconds, twice in a second
 
+
+
 while not exit:
-    delta_time = clock.tick() / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
+    delta_time = clock.tick(120) / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
     for event in pygame.event.get(): #this gets all the events in the pygame
         if event.type == pygame.QUIT:
             exit = True
@@ -172,6 +182,7 @@ while not exit:
     for collided_stride in laser:
         pos = collided_stride.rect.move(0 , -10).midbottom 
         Explosion(explosion_surfaces, pos, all_sprites)
+        explosion_sound.play()
     
     if pygame.sprite.spritecollide(player, meteor_sprites, True, pygame.sprite.collide_mask):
         exit = True
