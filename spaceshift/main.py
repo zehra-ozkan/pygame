@@ -87,7 +87,34 @@ class Meteor(pygame.sprite.Sprite):
         self.meteor_timer()
         if not self.live:
             self.kill()    
+
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self,surfaces :list, pos, groups):
+        super().__init__(groups)
+        self.surfaces = surfaces
+        self.image = surfaces[0] #initial image for the animation
         
+        self.rect = self.image.get_frect(center=pos)
+        self.animation_speed = 20 #this is in milliseconds
+        self.last_image_birth = 0
+        self.current_image = 0
+        print("initialised the explostion")
+    def update(self, dt):
+        if pygame.time.get_ticks() - self.last_image_birth >= self.animation_speed:
+            self.current_image = self.current_image + 1
+            self.last_image_birth = pygame.time.get_ticks()
+
+            print("displaying ", self.current_image)
+        
+        if self.current_image >= len(self.surfaces):
+            self.kill()
+            print("killing")
+            return 
+        
+        self.image = self.surfaces[self.current_image]
+        
+        
+     
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) + 1
     text_surf = font.render(str(current_time)  , True, (201 , 170, 250))
@@ -122,25 +149,34 @@ player = Player(all_sprites)
 meteor_surface = pygame.image.load(join('spaceshift', 'images', 'meteor.png')).convert_alpha()
 laser_surface = pygame.image.load(join('spaceshift', 'images', 'laser.png')).convert_alpha()
 font = pygame.font.Font(join('spaceshift', 'images', 'font.ttf'), 30)
+explosion_surfaces = []
+for i in range(21):
+    explosion_surfaces.append(pygame.image.load(join('spaceshift', 'images','explosion', str(i) + '.png')).convert_alpha())
 
 #custom event -> meteor event
 meteor_event = pygame.event.custom_type()
 pygame.time.set_timer(meteor_event, 500) #it will be triggered every 500 miliseconds, twice in a second
 
 while not exit:
-    delta_time = clock.tick(60) / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
+    delta_time = clock.tick() / 1000 #delta time measrures hte time took by the computer to render in between the last 2 frames, how much time has changed since the last 2 frames, different in everty computer
     for event in pygame.event.get(): #this gets all the events in the pygame
         if event.type == pygame.QUIT:
             exit = True
         if event.type == meteor_event:
             Meteor(meteor_surface , (all_sprites, meteor_sprites))
-            pass
     
     #update
     all_sprites.update(delta_time)
-    collided_sprites = pygame.sprite.groupcollide(laser_sprites, meteor_sprites, True, True)
+    laser = pygame.sprite.groupcollide(meteor_sprites,laser_sprites, True, True)
+    
+    for collided_stride in laser:
+        pos = collided_stride.rect.move(0 , -10).midbottom 
+        Explosion(explosion_surfaces, pos, all_sprites)
+    
     if pygame.sprite.spritecollide(player, meteor_sprites, True, pygame.sprite.collide_mask):
         exit = True
+    
+    
 
     display_surface.fill('#3a2e3f')#if you remove htis line it does not claer
     all_sprites.draw(display_surface)
